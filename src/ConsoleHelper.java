@@ -22,15 +22,6 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.List;
 
-
-
-
-
-
-
-/**
- * Created by 1 on 09.03.2015.
- */
 public class ConsoleHelper extends JFrame{
 
     public static final int MAX_LENGHT_PATTERN = 15;
@@ -59,7 +50,7 @@ public class ConsoleHelper extends JFrame{
                 }
             }).start();
         }
-    };;
+    };
 
     public static ConsoleHelper getInstance() {return instance;}
 
@@ -104,9 +95,7 @@ public class ConsoleHelper extends JFrame{
                     tikerField.setText("");
                     try {
                         tikerArea.setText(ChartsCodes.getInstance().getListTikersToString(tikerField.getText()));
-                    } catch (IOException e1) {
-                        e1.printStackTrace();
-                    } catch (ClassNotFoundException e1) {
+                    } catch (IOException | ClassNotFoundException e1) {
                         e1.printStackTrace();
                     }
                 });
@@ -130,18 +119,12 @@ public class ConsoleHelper extends JFrame{
         @Override
         public void changedUpdate(DocumentEvent e) {
             writeLog("ConsoleHelper вызван tikerField.addInputMethodListener");
-            Thread printNewList = new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    try {
-                        tikerArea.setText(ChartsCodes.getInstance().getListTikersToString(tikerField.getText()));
-                    } catch (IOException e1) {
+            Thread printNewList = new Thread(() -> {
+                try {
+                    tikerArea.setText(ChartsCodes.getInstance().getListTikersToString(tikerField.getText()));
+                } catch (IOException | ClassNotFoundException e1) {
 //                    e1.printStackTrace();
-                        writeLog("ConsoleHelper ошибка при вызове ChartCodes" + e1.toString());
-                    } catch (ClassNotFoundException e1) {
-//                    e1.printStackTrace();
-                        writeLog("ConsoleHelper ошибка при вызове ChartCodes" + e1.toString());
-                    }
+                    writeLog("ConsoleHelper ошибка при вызове ChartCodes" + e1.toString());
                 }
             });
             printNewList.start();
@@ -154,28 +137,18 @@ public class ConsoleHelper extends JFrame{
         try {
             tikerButton.setText(new TikerIdCode().invoke());
         } catch (BadLocationException e1) {
-            writeLog("ConsoleHelper: в tikerArea.addCaretListener ошибка при вызове new TikerIdCode().invoke()" + e1.getStackTrace());
+            writeLog("ConsoleHelper: в tikerArea.addCaretListener ошибка при вызове new TikerIdCode().invoke()" + Arrays.toString(e1.getStackTrace()));
         }
     };
 
-    private AdjustmentListener adjustmentListener = new AdjustmentListener() {
-        public void adjustmentValueChanged(AdjustmentEvent e) {
-            e.getAdjustable().setValue(e.getAdjustable().getMaximum());
-        }
-    };
+    private AdjustmentListener adjustmentListener = e -> e.getAdjustable().setValue(e.getAdjustable().getMaximum());
 
-    private ActionListener actionListener1 = new ActionListener() {
+    private ActionListener actionListener1 = e -> new Thread(new Runnable() {
         @Override
-        public void actionPerformed(ActionEvent e) {
-
-            new Thread(new Runnable() {
-                @Override
-                public void run() {
-                    HistoryDownloader.skipRefreshOneTime();
-                }
-            }).start();
+        public void run() {
+            HistoryDownloader.skipRefreshOneTime();
         }
-    };
+    }).start();
 
     private List<Bar> bars = new ArrayList<Bar>(){{
         add(new Bar("20110728,153500,10.0,15,9,14.0,3900000"));
@@ -288,24 +261,21 @@ public class ConsoleHelper extends JFrame{
         writeLog("ConsoleHelper показаны последние две свечи");
 
         // сет содержит найденные паттерны всех длинн TODO нормально не сорирует
-        Set<PatternBars> patternBars = new TreeSet<PatternBars>(new Comparator() {
-            @Override
-            public int compare(Object o1, Object o2) {
-                PatternBars p1 = (PatternBars)o1;
-                PatternBars p2 = (PatternBars)o2;
+        Set<PatternBars> patternBars = new TreeSet<>((o1, o2) -> {
+            PatternBars p1 = o1;
+            PatternBars p2 = o2;
 
-                int pd1 = p1.percentDiffBetweenLongVsShort();
-                int pd2 = p2.percentDiffBetweenLongVsShort();
+            int pd1 = p1.percentDiffBetweenLongVsShort();
+            int pd2 = p2.percentDiffBetweenLongVsShort();
 
 //                writeLog("pd1:"+pd1+" pd2:"+pd2);
 
-                return Math.abs(pd1-pd2);
-            }
+            return Math.abs(pd1-pd2);
         });
 
         for (int lenghtPattern = 2; lenghtPattern < MAX_LENGHT_PATTERN; lenghtPattern++) {
             PatternBars patternLastBars= new PatternBars(historyStorage,new ExampleOfBarChart(historyStorage,historyStorage.getBars().size()-1-lenghtPattern,lenghtPattern));
-//            ConsoleHelper.getInstance().writeLog("ConsoleHelper: паттерн " + patternLastBars.toString());
+
             patternBars.add(patternLastBars);
         }
         // теперь в patternBars содержатся найденные паттерны всех длинн
@@ -317,9 +287,9 @@ public class ConsoleHelper extends JFrame{
         List<BigDecimal> shortCloses = new ArrayList<>();
 
         // собирает открытия и закрытия паттернов разных длинн в обобщенные списки
-        BigDecimal minimumGoal = new BigDecimal(0);
+
         for (PatternBars pattern : patternBars) {
-            minimumGoal = pattern.getMinimumGoalOfDeal();
+
             ConsoleHelper.getInstance().writeMessage(pattern.getStatsLongOrShort());
             longOpens.addAll(pattern.getRelativeLongsOpens());
             longCloses.addAll(pattern.geRelativetLongsCloses());
@@ -331,54 +301,7 @@ public class ConsoleHelper extends JFrame{
         Collections.sort(shortOpens);
         Collections.sort(shortCloses);
 
-        if (historyStorage.getBars().size()!=0 && longOpens.size()!=0 && longCloses.size()!=0) {
-            writeMessage("ConsoleHelper minimum goal"+minimumGoal);
 
-            BigDecimal open1P = longOpens.get(longOpens.size() / 100);
-            BigDecimal absoluteOpen1P = historyStorage.getBars().get(historyStorage.getBars().size() - 1).CLOSE.add(open1P);
-            writeMessage("ConsoleHelper вероятность 1% войти в LONG по цене " + absoluteOpen1P + " смещение от закрытия:" + open1P + " тейк профит:" + absoluteOpen1P.add(minimumGoal));
-
-            BigDecimal open10P = longOpens.get(longOpens.size() / 10);
-            BigDecimal absoluteOpen10P = historyStorage.getBars().get(historyStorage.getBars().size() - 1).CLOSE.add(open10P);
-            writeMessage("ConsoleHelper вероятность 10% войти в LONG по цене " + absoluteOpen10P + " смещение от закрытия:" + open10P + " тейк профит:"+ absoluteOpen10P.add(minimumGoal));
-
-            BigDecimal open20P = longOpens.get((longOpens.size() / 10)*2);
-            BigDecimal absoluteOpen20P = historyStorage.getBars().get(historyStorage.getBars().size() - 1).CLOSE.add(open20P);
-            writeMessage("ConsoleHelper вероятность 20% войти в LONG по цене " + absoluteOpen20P + " смещение от закрытия:" + open20P + " тейк профит:"+ absoluteOpen20P.add(minimumGoal));
-
-            BigDecimal open30P = longOpens.get((longOpens.size() / 10)*3);
-            BigDecimal absoluteOpen30P = historyStorage.getBars().get(historyStorage.getBars().size() - 1).CLOSE.add(open30P);
-            writeMessage("ConsoleHelper вероятность 30% войти в LONG по цене " + absoluteOpen30P + " смещение от закрытия:" + open30P + " тейк профит:"+ absoluteOpen30P.add(minimumGoal));
-
-            BigDecimal open40P = longOpens.get((longOpens.size() / 10)*4);
-            BigDecimal absoluteOpen40P = historyStorage.getBars().get(historyStorage.getBars().size() - 1).CLOSE.add(open40P);
-            writeMessage("ConsoleHelper вероятность 40% войти в LONG по цене " + absoluteOpen40P + " смещение от закрытия:" + open40P + " тейк профит:"+ absoluteOpen40P.add(minimumGoal));
-
-            BigDecimal open50P = longOpens.get((longOpens.size() / 10)*5);
-            BigDecimal absoluteOpen50P = historyStorage.getBars().get(historyStorage.getBars().size() - 1).CLOSE.add(open50P);
-            writeMessage("ConsoleHelper вероятность 50% войти в LONG по цене " + absoluteOpen50P + " смещение от закрытия:" + open50P + " тейк профит:"+ absoluteOpen50P.add(minimumGoal));
-
-            BigDecimal open60P = longOpens.get((longOpens.size() / 10)*6);
-            BigDecimal absoluteOpen60P = historyStorage.getBars().get(historyStorage.getBars().size() - 1).CLOSE.add(open60P);
-            writeMessage("ConsoleHelper вероятность 60% войти в LONG по цене " + absoluteOpen60P + " смещение от закрытия:" + open60P + " тейк профит:"+ absoluteOpen60P.add(minimumGoal));
-
-            BigDecimal open70P = longOpens.get((longOpens.size() / 10)*7);
-            BigDecimal absoluteOpen70P = historyStorage.getBars().get(historyStorage.getBars().size() - 1).CLOSE.add(open70P);
-            writeMessage("ConsoleHelper вероятность 70% войти в LONG по цене " + absoluteOpen70P + " смещение от закрытия:" + open70P + " тейк профит:"+ absoluteOpen70P.add(minimumGoal));
-
-            BigDecimal open80P = longOpens.get((longOpens.size() / 10)*8);
-            BigDecimal absoluteOpen80P = historyStorage.getBars().get(historyStorage.getBars().size() - 1).CLOSE.add(open80P);
-            writeMessage("ConsoleHelper вероятность 80% войти в LONG по цене " + absoluteOpen80P + " смещение от закрытия:" + open80P + " тейк профит:"+ absoluteOpen80P.add(minimumGoal));
-
-            BigDecimal open90P = longOpens.get((longOpens.size() / 10)*9);
-            BigDecimal absoluteOpen90P = historyStorage.getBars().get(historyStorage.getBars().size() - 1).CLOSE.add(open90P);
-            writeMessage("ConsoleHelper вероятность 90% войти в LONG по цене " + absoluteOpen90P + " смещение от закрытия:" + open90P + " тейк профит:"+ absoluteOpen90P.add(minimumGoal));
-
-            BigDecimal open100P = longOpens.get(longOpens.size() - 1);
-            BigDecimal absoluteOpen100P = historyStorage.getBars().get(historyStorage.getBars().size() - 1).CLOSE.add(open100P);
-            writeMessage("ConsoleHelper вероятность 100% войти в LONG по цене " + absoluteOpen100P + " смещение от закрытия:" + open100P + " тейк профит:" + absoluteOpen100P.add(minimumGoal));
-
-        }
 //        writeMessage("ConsoleHelper 100% сделок LONG открываются не ниже "+longOpens.get());
 
 
@@ -392,14 +315,13 @@ public class ConsoleHelper extends JFrame{
         messageArea.append(message);
         messageArea.append("\n");
         writeLog(message + "\n");
-//        testDrawChart();
     }
 
     public void writeLog(String logMessage) {
         System.out.println(logMessage);
         try {
             FileWriter file = new FileWriter(LOG,true);
-            file.append(new Date()+" "+logMessage+"\n");
+            file.append(new Date() + " " + logMessage + "\n");
             file.close();
         } catch (IOException e) {
             e.printStackTrace();

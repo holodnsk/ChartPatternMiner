@@ -3,15 +3,11 @@ import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
-/**
- * Created by 1 on 16.03.2015.
- */
 public class ExampleOfBarChart implements Serializable{
 
     private HistoryStorage historyStorage;
     private int startAddress;
     private int endAdress;
-    private int stepAfterExampleToGetProfit;
 
     private List<Bar> bars = new ArrayList<>();
 
@@ -37,9 +33,8 @@ public class ExampleOfBarChart implements Serializable{
 
         ExampleOfBarChart that = (ExampleOfBarChart) o;
 
-        if (toString().equals(that.toString())) return true;
+        return toString().equals(that.toString());
 
-        return false;
     }
 
     @Override
@@ -74,14 +69,11 @@ public class ExampleOfBarChart implements Serializable{
 
     @Override
     public String toString() {
-        String result = new String();
+        String result = "";
         for (Bar bar : bars) result+=bar;
         return "Start:"+String.valueOf(startAddress)+" End:"+String.valueOf(endAdress)+" "+result;
     }
 
-    public void setStepToProfit(int stepAfterExample) {
-        stepAfterExampleToGetProfit = stepAfterExample;
-    }
 
     public int getSize() {
         return size;
@@ -92,5 +84,4 @@ public class ExampleOfBarChart implements Serializable{
         else if (deal.type.equals(Deal.Type.SHORT)) this.dealShort=deal;
         else ConsoleHelper.getInstance().writeLog("ExampleOfChartBar попытка добавить сделку не LONG  и не SHORT");
     }
-
 }

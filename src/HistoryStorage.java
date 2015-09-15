@@ -107,20 +107,6 @@ public class HistoryStorage {
         return result;
     }
 
-    private int getTimeFrameSeconds() {
-        int result = Integer.MAX_VALUE;
-        int prevTime = 0;
-        int count = 10;
-        for (Bar bar : bars) {
-            int time = Integer.parseInt(bar.TIME.substring(0,bar.TIME.length()-2));
-            int diff = time - prevTime;
-            if (diff <result) result= diff;
-            prevTime=time;
-            if (count--==0) break;
-        }
-        return result*60;
-    }
-
     // метод определяет шаг цены
     public BigDecimal getMinimumStepCost() {
 
@@ -166,18 +152,6 @@ public class HistoryStorage {
 
     public List<Bar> getBars() {
         return bars;
-    }
-
-    public String getFileName() {
-        return importFile;
-    }
-
-    public void setDir(String dir) {
-        this.dir = dir;
-    }
-
-    public String getDir() {
-        return dir;
     }
 
 

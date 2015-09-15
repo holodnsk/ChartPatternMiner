@@ -81,7 +81,7 @@ public class HistoryDownloader {
                                 ConsoleHelper.getInstance().writeLog(stackTraceElement.toString());
                         }
 
-                    };
+                    }
                     skipRefresh=false;
 
                     // после успешной загрузки свежих данных выводим пользователю рекомендации

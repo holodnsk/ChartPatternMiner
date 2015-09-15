@@ -55,9 +55,8 @@ public class Bar implements Serializable,Comparable<Bar>{
         if (!HIGH.equals(bar.HIGH)) return false;
         if (!LOW.equals(bar.LOW)) return false;
         if (!OPEN.equals(bar.OPEN)) return false;
-        if (!TIME.equals(bar.TIME)) return false;
+        return TIME.equals(bar.TIME);
 
-        return true;
     }
 
     @Override
@@ -75,8 +74,7 @@ public class Bar implements Serializable,Comparable<Bar>{
     public boolean equalsTime(Bar bar){
         if (this == bar) return true;
         if (!(bar instanceof Bar)) return false;
-        if (DATE.equals(bar.DATE) && TIME.equals(bar.TIME)) return true ;
-        return false;
+        return DATE.equals(bar.DATE) && TIME.equals(bar.TIME);
     }
 
     @Override

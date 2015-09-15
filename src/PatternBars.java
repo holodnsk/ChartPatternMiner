@@ -1,10 +1,6 @@
 import java.math.BigDecimal;
 import java.util.*;
 
-/**
- * Created by 1 on 10.03.2015.
- */
-
 /*
 этот класс описывает паттерн учитывающий возможные диапазоны значений OHLC образцов графика, не учитывает
 value и время,
@@ -16,10 +12,6 @@ value и время,
 */
 
 public class PatternBars {
-    // чтобы считать паттерн статистически ценным надо определить минимальное количество эксемплов на основе количества
-    // на основе этого счетчика PatternFactory ждет завершения поиска паттернов
-//    static AtomicInteger count = new AtomicInteger(0);
-    //    static {
 
 // указывает какую долю от максимальной цены счиатать минимальной целью сделки, 200 равно пол процента, 100 равно 1 процент
     public static final BigDecimal PERCENT_TO_MINIMUM_GOAL_OF_DEAL = new BigDecimal(0.5f);
@@ -42,14 +34,6 @@ public class PatternBars {
                 ;
     }
     HistoryStorage historyStorage;
-
-
-
-    public final static int MAX_NUM_OF_MAIN_EXAMPLES = 1000;
-
-    // свечей стораджа, и если их достаточно много, то установить минимумом MAX_NUM_OF_MAIN_EXAMPLES
-
-    public int MINIMUM_NUM_OF_MAIN_EXAMPLES;
 
     // определяет колличество примеров паттерна которое должно встречаться быть на графике
     public int HISTORY_SIZE;
@@ -177,11 +161,11 @@ public class PatternBars {
             BigDecimal openToLong = new BigDecimal(0);
             int stepOpenLong=0;
             BigDecimal closeToLong = new BigDecimal(0);
-            int stepCloseLong=0;
+            int stepCloseLong;
             BigDecimal openToShort = new BigDecimal(0);
             int stepOpenShort=0;
             BigDecimal closeToShort = new BigDecimal(0);
-            int stepCloseShort=0;
+            int stepCloseShort;
             Set<Deal> dealsLong = new HashSet<>();
             Set<Deal> dealsShort = new HashSet<>();
             for (
@@ -237,7 +221,6 @@ public class PatternBars {
             for (Deal deal : dealsLong) {
                 if (deal.profit.compareTo(bestLongDeal.profit)>0)
                     bestLongDeal=deal;
-//                else System.out.println();
             }
             // если лучшая лонг сделка дает профита больше чем допустимо минимально
             if (bestLongDeal.profit.compareTo(getMinimumGoalOfDeal())>=0) {
@@ -248,7 +231,6 @@ public class PatternBars {
                 relativeLongsOpens.add(bestLongDeal.open.subtract(example.getCloseValue()));
                 relativeLongsCloses.add(bestLongDeal.close.subtract(bestLongDeal.open));
             }
-//            else System.out.println();
 
             Deal bestShortDeal = new Deal(Deal.Type.SHORT,new BigDecimal(0),new BigDecimal(0),0,0);
 
@@ -256,7 +238,6 @@ public class PatternBars {
             for (Deal deal : dealsShort) {
                 if (deal.profit.compareTo(bestLongDeal.profit)>0)
                     bestShortDeal=deal;
-//                else System.out.println();
             }
             // если лучшая ШОРТ сделка дает профита больше минимальго дпустимого
             if (bestShortDeal.profit.compareTo(getMinimumGoalOfDeal())>=0) {
@@ -266,7 +247,6 @@ public class PatternBars {
                 relativeShortOpens.add(bestShortDeal.open.subtract(example.getCloseValue()));
                 relativeShortCloses.add(bestShortDeal.close.subtract(bestShortDeal.open));
             }
-//            else System.out.println();
 
         }
         for (ExampleOfBarChart example : examples) {
@@ -310,10 +290,6 @@ public class PatternBars {
 
     }
 
-    public int getNumOfExamples() {
-        return examples.size();
-    }
-
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -321,9 +297,8 @@ public class PatternBars {
 
         PatternBars patternBars = (PatternBars) o;
 
-        if (!protoBarPatternedList.equals(patternBars.protoBarPatternedList)) return false;
+        return protoBarPatternedList.equals(patternBars.protoBarPatternedList);
 
-        return true;
     }
 
     @Override
@@ -337,10 +312,6 @@ public class PatternBars {
 
     public Set<ExampleOfBarChart> getExamplesToShort() {return examplesToShort; }
 
-    public Set<ExampleOfBarChart> getExamplesHighVolatility() {
-        return examplesHighVolatility;
-    }
-
 
     public String getStatsLongOrShort() {
         System.out.println("PatternBars: S:"+protoBarPatternedList.size()+" L:"+getExamplesToLong().size()+" S:"+getExamplesToShort().size());
@@ -350,27 +321,6 @@ public class PatternBars {
         if (examplesToShort.size()==examplesToLong.size()) stats+= "S:"+protoBarPatternedList.size()+" "+" SHORT:"+examplesToShort.size()+" LONG:"+examplesToLong.size();
 //        stats+= "LONG and SHORT is equals";
         return stats;
-    }
-
-    public List<Deal> getAvailableLongDeals() {
-        List<Deal> result = new ArrayList<>();
-        for (ExampleOfBarChart exampleOfBarChart : examplesToLong) {
-            result.add(exampleOfBarChart.getDealLong());
-        }
-        for (ExampleOfBarChart exampleOfBarChart : examplesToShort) {
-            result.add(exampleOfBarChart.getDealLong());
-        }
-        return result;
-    }
-    public List<Deal> getAvailableShortDeals() {
-        List<Deal> result = new ArrayList<>();
-        for (ExampleOfBarChart exampleOfBarChart : examplesToShort) {
-            result.add(exampleOfBarChart.getDealShort());
-        }
-        for (ExampleOfBarChart exampleOfBarChart : examplesToLong) {
-            result.add(exampleOfBarChart.getDealShort());
-        }
-        return result;
     }
 
     // отрицательные значения означают что вход в ЛОНГ меньше последнего close

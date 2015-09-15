@@ -2,9 +2,6 @@ import java.io.*;
 import java.net.URL;
 import java.util.*;
 
-/**
- * Created by 1 on 12.06.2015.
- */
 public class ChartsCodes {
 
     private static String CHART_CODES_FILE ="chartCodes.txt";
@@ -17,11 +14,8 @@ public class ChartsCodes {
     static {
         try {
             instance=new ChartsCodes();
-        } catch (IOException e) {
-            ConsoleHelper.getInstance().writeLog("ChartsCodes при статтичной инициализации синглотона произошла ошибка"+e.getStackTrace());
-            e.printStackTrace();
-        } catch (ClassNotFoundException e) {
-            ConsoleHelper.getInstance().writeLog("ChartsCodes при статтичной инициализации синглотона произошла ошибка"+e.getStackTrace());
+        } catch (IOException | ClassNotFoundException e) {
+            ConsoleHelper.getInstance().writeLog("ChartsCodes при статичной инициализации синглотона произошла ошибка"+ Arrays.toString(e.getStackTrace()));
             e.printStackTrace();
         }
     }
@@ -82,7 +76,7 @@ public class ChartsCodes {
         URL website = new URL(URL_OFCODES);
 
         Scanner scanner = new Scanner(new InputStreamReader(website.openStream(),"cp1251"));
-        String stringedSite = new String();
+        String stringedSite = "";
         while (scanner.hasNext()) stringedSite+= scanner.nextLine();
 
         stringedSite=stringedSite.substring(0,stringedSite.indexOf("var aEmitentMarkets"));
@@ -99,17 +93,17 @@ public class ChartsCodes {
         // повторим для aEmitentCodes
         for (String var : content) if (var.contains("aEmitentCodes")) aEmitentCodes = cutStringToArray(var);
 
-            Iterator<String> idIterator = aEmitentIds.iterator();
-            Iterator<String> codeIterator = aEmitentCodes.iterator();
-            Map<String,String> temp = new HashMap<>();
-            while (idIterator.hasNext() && codeIterator.hasNext()) {
-                temp.put(idIterator.next(), codeIterator.next());
-            }
+        Iterator<String> idIterator = aEmitentIds.iterator();
+        Iterator<String> codeIterator = aEmitentCodes.iterator();
+        Map<String,String> temp = new HashMap<>();
+        while (idIterator.hasNext() && codeIterator.hasNext()) {
+            temp.put(idIterator.next(), codeIterator.next());
+        }
 
-            idsCodes=temp;
-            if (idIterator.hasNext() || codeIterator.hasNext()) {
-                ConsoleHelper.getInstance().writeMessage("ChartCodes: колличество ID " + aEmitentIds.size()+" и колличество КОДОВ " +aEmitentCodes.size()+" инструментов из " + URL_OFCODES + " не равны");
-            }
+        idsCodes=temp;
+        if (idIterator.hasNext() || codeIterator.hasNext()) {
+            ConsoleHelper.getInstance().writeMessage("ChartCodes: колличество ID " + aEmitentIds.size()+" и колличество КОДОВ " +aEmitentCodes.size()+" инструментов из " + URL_OFCODES + " не равны");
+        }
     }
 
     private List<String> cutStringToArray(String var) {
@@ -121,34 +115,17 @@ public class ChartsCodes {
 
     public static ChartsCodes getInstance() throws IOException, ClassNotFoundException {
 
-     return instance;
+        return instance;
     }
 
-    public String getCode(String tikerName) throws NoHaveTikerException {
-        if (!idsCodes.containsKey(tikerName)) throw new NoHaveTikerException();
-        return idsCodes.get(tikerName);
-    }
-
-    public Set<String> getListTikers(){
-        return idsCodes.keySet();
-    }
-
-    public String getListTikersToString() {
-        return getListTikersToString("");
-    }
 
     public String getListTikersToString(String key) {
-        String result = new String();
+        String result = "";
         for (Map.Entry<String, String> entry : idsCodes.entrySet()) {
             if (entry.getValue().toUpperCase().contains(key.toUpperCase())) result+=entry.getValue()+" "+entry.getKey()+"\n";
         }
 
-//        for (String s : idsCodes.values()) {
-//            if (s.toUpperCase().contains(key.toUpperCase()))result+=s+"\n";
-//        }
         return result;
     }
 
-    private class NoHaveTikerException extends Throwable {
-    }
 }
