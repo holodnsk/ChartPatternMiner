@@ -10,7 +10,6 @@ import org.jfree.data.xy.OHLCDataItem;
 import org.jfree.data.xy.OHLCDataset;
 
 import javax.swing.*;
-import javax.swing.event.CaretEvent;
 import javax.swing.event.CaretListener;
 import javax.swing.event.DocumentEvent;
 import javax.swing.event.DocumentListener;
@@ -42,6 +41,25 @@ public class ConsoleHelper extends JFrame{
     private JFreeChart chart;
     private OHLCDataset chartDataSet;
     private OHLCSeriesCollection ohlcSeriesCollection = new OHLCSeriesCollection();
+
+
+    private final HistoryDownloader downloader[] = new HistoryDownloader[1];
+    private ActionListener actionListener = new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
+
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    if (downloader[0] == null) downloader[0] = new HistoryDownloader(tikerButton.getText());
+                    else {
+                        downloader[0].interrupt();
+                        downloader[0] = new HistoryDownloader(tikerButton.getText());
+                    }
+                }
+            }).start();
+        }
+    };;
 
     public static ConsoleHelper getInstance() {return instance;}
 
@@ -75,149 +93,97 @@ public class ConsoleHelper extends JFrame{
 
     private JPanel panelMaxNumOfPatternsEverLength = new JPanel();
 
+    private final boolean[] tikerFieldIsOnceCliked = {false};
 
-    private void mainWindowGeneration(){
-
-
-        tikerPanel.add(BorderLayout.NORTH, tikerField);
-
-        tikerPanel.add(tikerSelectorScrollPane);
-        tikerPanel.add(BorderLayout.SOUTH,tikerButton);
-        panelSettings.add(tikerPanel);
-
-        final boolean[] tikerFieldIsOnceCliked = {false};
-        tikerField.addMouseListener(new MouseAdapter() {
-            @Override
-            public void mouseClicked(MouseEvent e) {
-                if (!tikerFieldIsOnceCliked[0]) {
-                    tikerFieldIsOnceCliked[0] =true;
-                    Thread clearTikerField = new Thread(new Runnable() {
-                        @Override
-                        public void run() {
-                            tikerField.setText("");
-                            try {
-                                tikerArea.setText(ChartsCodes.getInstance().getListTikersToString(tikerField.getText()));
-                            } catch (IOException e1) {
-                                e1.printStackTrace();
-                            } catch (ClassNotFoundException e1) {
-                                e1.printStackTrace();
-                            }
-                        }
-                    });
-                    clearTikerField.start();
-                }
-
-            }
-        });
-
-
-        tikerField.getDocument().addDocumentListener(new DocumentListener() {
-            @Override
-            public void insertUpdate(DocumentEvent e) {
-                changedUpdate(e);
-            }
-
-            @Override
-            public void removeUpdate(DocumentEvent e) {
-                changedUpdate(e);
-            }
-
-            @Override
-            public void changedUpdate(DocumentEvent e) {
-                writeLog("ConsoleHelper вызван tikerField.addInputMethodListener");
-                Thread printNewList = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            tikerArea.setText(ChartsCodes.getInstance().getListTikersToString(tikerField.getText()));
-                        } catch (IOException e1) {
-//                    e1.printStackTrace();
-                            writeLog("ConsoleHelper ошибка при вызове ChartCodes"+e1.toString());
-                        } catch (ClassNotFoundException e1) {
-//                    e1.printStackTrace();
-                            writeLog("ConsoleHelper ошибка при вызове ChartCodes"+e1.toString());
-                        }
+    private MouseAdapter mouseAdapter = new MouseAdapter() {
+        @Override
+        public void mouseClicked(MouseEvent e) {
+            if (!tikerFieldIsOnceCliked[0]) {
+                tikerFieldIsOnceCliked[0] = true;
+                Thread clearTikerField = new Thread(() -> {
+                    tikerField.setText("");
+                    try {
+                        tikerArea.setText(ChartsCodes.getInstance().getListTikersToString(tikerField.getText()));
+                    } catch (IOException e1) {
+                        e1.printStackTrace();
+                    } catch (ClassNotFoundException e1) {
+                        e1.printStackTrace();
                     }
                 });
-                printNewList.start();
-
-
+                clearTikerField.start();
             }
-        });
-        tikerButton.setEnabled(false);
-        tikerArea.addCaretListener(new CaretListener() {
-            @Override
-            public void caretUpdate(CaretEvent e) {
-                try {
-                    tikerButton.setText(new TikerIdCode().invoke());
-                } catch (BadLocationException e1) {
-                    writeLog("ConsoleHelper: в tikerArea.addCaretListener ошибка при вызове new TikerIdCode().invoke()"+e1.getStackTrace());
+
+        }
+    };
+
+    private DocumentListener documentListener = new DocumentListener() {
+        @Override
+        public void insertUpdate(DocumentEvent e) {
+            changedUpdate(e);
+        }
+
+        @Override
+        public void removeUpdate(DocumentEvent e) {
+            changedUpdate(e);
+        }
+
+        @Override
+        public void changedUpdate(DocumentEvent e) {
+            writeLog("ConsoleHelper вызван tikerField.addInputMethodListener");
+            Thread printNewList = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        tikerArea.setText(ChartsCodes.getInstance().getListTikersToString(tikerField.getText()));
+                    } catch (IOException e1) {
+//                    e1.printStackTrace();
+                        writeLog("ConsoleHelper ошибка при вызове ChartCodes" + e1.toString());
+                    } catch (ClassNotFoundException e1) {
+//                    e1.printStackTrace();
+                        writeLog("ConsoleHelper ошибка при вызове ChartCodes" + e1.toString());
+                    }
                 }
-            }
-        });
-
-        final HistoryDownloader downloader[] = new HistoryDownloader[1];
-        tikerButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        if (downloader[0]==null) downloader[0] = new HistoryDownloader(tikerButton.getText());
-                        else {
-                            downloader[0].interrupt();
-                            downloader[0] = new HistoryDownloader(tikerButton.getText());
-                        }
-                    }
-                }).start();
-            }
-        });
+            });
+            printNewList.start();
 
 
+        }
+    };
 
+    private CaretListener listener = e -> {
+        try {
+            tikerButton.setText(new TikerIdCode().invoke());
+        } catch (BadLocationException e1) {
+            writeLog("ConsoleHelper: в tikerArea.addCaretListener ошибка при вызове new TikerIdCode().invoke()" + e1.getStackTrace());
+        }
+    };
 
-        panelSettings.add(panelMaxLengthField);
+    private AdjustmentListener adjustmentListener = new AdjustmentListener() {
+        public void adjustmentValueChanged(AdjustmentEvent e) {
+            e.getAdjustable().setValue(e.getAdjustable().getMaximum());
+        }
+    };
 
+    private ActionListener actionListener1 = new ActionListener() {
+        @Override
+        public void actionPerformed(ActionEvent e) {
 
-        panelSettings.add(panelMaxNumOfPatternsEverLength);
+            new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    HistoryDownloader.skipRefreshOneTime();
+                }
+            }).start();
+        }
+    };
 
-        add(BorderLayout.EAST, panelSettings);
-
-        add(messagePane);
-
-        // автоскролл окна сообщений вниз
-        messagePane.getVerticalScrollBar().addAdjustmentListener(new AdjustmentListener() {
-            public void adjustmentValueChanged(AdjustmentEvent e) {
-                e.getAdjustable().setValue(e.getAdjustable().getMaximum());
-            }
-        });
-
-        // TODO в панель haveTikers создать и добавить кнопки загрузки тикеров для которых  уже имеются файлы истории
-//        panelSettings.add(haveTikers);
-
-        getRecomendsNowButton.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-
-                new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-                        HistoryDownloader.skipRefreshOneTime();
-                    }
-                }).start();
-            }
-        });
-        panelSettings.add(getRecomendsNowButton);
-
-
-        List<Bar> bars = new ArrayList<Bar>(){{
-            add(new Bar("20110728,153500,10.0,15,9,14.0,3900000"));
-            add(new Bar("20110728,154000,11.0,17,10,16.0,39720000"));
-            add(new Bar("20110728,154500,12.0,19,11,18.0,6080000"));
-            add(new Bar("20110728,155000,13.0,21,12.0,20,1070000"));
-            add(new Bar("20110728,155500,14.0,23.0,13.0,21.0,2540000"));
-            add(new Bar("20110728,160000,15.0,25.0,14.0,24,8040000"));
+    private List<Bar> bars = new ArrayList<Bar>(){{
+        add(new Bar("20110728,153500,10.0,15,9,14.0,3900000"));
+        add(new Bar("20110728,154000,11.0,17,10,16.0,39720000"));
+        add(new Bar("20110728,154500,12.0,19,11,18.0,6080000"));
+        add(new Bar("20110728,155000,13.0,21,12.0,20,1070000"));
+//            add(new Bar("20110728,155500,14.0,23.0,13.0,21.0,2540000"));
+//            add(new Bar("20110728,160000,15.0,25.0,14.0,24,8040000"));
 //            add(new Bar("20110728,160000,0.37599,0.37602,0.3753,0.3753,8040000"));
 //            add(new Bar("20110728,160500,0.37551,0.37592,0.3751,0.3751,2920000"));
 //            add(new Bar("20110728,161000,0.37511,0.3758,0.37461,0.37466,24180000"));
@@ -228,7 +194,31 @@ public class ConsoleHelper extends JFrame{
 //            add(new Bar("20110728,163500,0.37481,0.37649,0.37421,0.376,16620000"));
 //            add(new Bar("20110728,164000,0.37598,0.3767,0.37556,0.37598,23770000"));
 //            add(new Bar("20110728,164500,0.37598,0.37774,0.37562,0.37568,19090000"));
-        }};
+    }};
+
+    private void mainWindowGeneration(){
+        tikerPanel.add(BorderLayout.NORTH, tikerField);
+        tikerPanel.add(tikerSelectorScrollPane);
+        tikerPanel.add(BorderLayout.SOUTH,tikerButton);
+        panelSettings.add(tikerPanel);
+        tikerField.addMouseListener(mouseAdapter);
+        tikerField.getDocument().addDocumentListener(documentListener);
+        tikerButton.setEnabled(false);
+        tikerArea.addCaretListener(listener);
+        tikerButton.addActionListener(actionListener);
+        panelSettings.add(panelMaxLengthField);
+        panelSettings.add(panelMaxNumOfPatternsEverLength);
+        add(BorderLayout.EAST, panelSettings);
+        add(messagePane);
+
+        // автоскролл окна сообщений вниз
+        messagePane.getVerticalScrollBar().addAdjustmentListener(adjustmentListener);
+
+        // TODO в панель haveTikers создать и добавить кнопки загрузки тикеров для которых  уже имеются файлы истории
+//        panelSettings.add(haveTikers);
+
+        getRecomendsNowButton.addActionListener(actionListener1);
+        panelSettings.add(getRecomendsNowButton);
 
         drawChart(bars);
 //        rePaintChart(bars);
@@ -281,35 +271,6 @@ public class ConsoleHelper extends JFrame{
 
     }
 
-    public void testRepaint() {
-        String title = "";
-        String symbol = "";
-        NumberAxis numberAxis;
-        List<Bar> bars2 = new ArrayList<Bar>(){{
-
-            add(new Bar("20110728,160000,0.37599,0.37602,0.3753,0.3753,8040000"));
-            add(new Bar("20110728,160500,0.37551,0.37592,0.3751,0.3751,2920000"));
-
-        }};
-
-        OHLCDataItem[] data2 = new OHLCDataItem[bars2.size()];
-        int index2 = 0;
-        for (Bar bar : bars2) {
-            Date date = bar.getDate();
-            double open = bar.OPEN.doubleValue();
-            double high = bar.HIGH.doubleValue();
-            double low = bar.LOW.doubleValue();
-            double close = bar.CLOSE.doubleValue();
-            double volume = bar.VOL;
-            OHLCDataItem item = new OHLCDataItem(date, open, high, low, close, volume);
-            data2[index2] = item;
-            index2++;
-        }
-
-        OHLCDataset dataSet2 = new DefaultOHLCDataset(symbol, data2);
-
-
-    }
 
 
     Map<String,HistoryStorage> storageMap = new HashMap<>();
@@ -325,8 +286,6 @@ public class ConsoleHelper extends JFrame{
         writeMessage(historyStorage.lastBarsToString(2));
 
         writeLog("ConsoleHelper показаны последние две свечи");
-        testRepaint();
-//        rePaintChart(historyStorage.getBars());
 
         // сет содержит найденные паттерны всех длинн TODO нормально не сорирует
         Set<PatternBars> patternBars = new TreeSet<PatternBars>(new Comparator() {
@@ -371,10 +330,7 @@ public class ConsoleHelper extends JFrame{
         Collections.sort(longCloses);
         Collections.sort(shortOpens);
         Collections.sort(shortCloses);
-//        for (BigDecimal longOpen : longOpens) System.out.println("ConsoleHelper LongOpen:"+longOpen);
-//        for (BigDecimal longClose : longCloses) System.out.println("ConsoleHelper LongClose:"+longClose);
-//        for (BigDecimal shortOpen : shortOpens) System.out.println("ConsoleHelper ShortOpen:"+shortOpen);
-//        for (BigDecimal shortClose : shortCloses) System.out.println("ConsoleHelper ShortClose:"+shortClose);
+
         if (historyStorage.getBars().size()!=0 && longOpens.size()!=0 && longCloses.size()!=0) {
             writeMessage("ConsoleHelper minimum goal"+minimumGoal);
 
