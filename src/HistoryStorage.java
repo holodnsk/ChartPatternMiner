@@ -35,7 +35,7 @@ public class HistoryStorage {
 
     String importFile;
 
-    private String dir=".";
+    private String dir="./history";
 
     public HistoryStorage(String nameContract, String idContract, String FILE_EXT, String timeframe) {
 
