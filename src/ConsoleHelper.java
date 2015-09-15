@@ -23,10 +23,17 @@ import java.math.BigDecimal;
 import java.util.*;
 import java.util.List;
 
+
+
+
+
+
+
 /**
  * Created by 1 on 09.03.2015.
  */
 public class ConsoleHelper extends JFrame{
+
     public static final int MAX_LENGHT_PATTERN = 15;
     private static String LOG = "log.log";
 

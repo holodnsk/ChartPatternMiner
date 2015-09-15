@@ -1,14 +1,10 @@
-
-
 import javax.swing.*;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-/**
- * Created by 1 on 10.03.2015.
- */
 public class ApplicationExecutor {
+
     public static final String EXTENSION_FILE_PATTERNS_BAR = ".patternsBAR";
     static public StoragePattern storagePattern = new StoragePattern();
 
