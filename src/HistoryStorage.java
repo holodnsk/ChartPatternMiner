@@ -1,14 +1,7 @@
-
-
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.math.BigDecimal;
 import java.util.*;
-import java.util.concurrent.TimeUnit;
-
-/**
- * Created by 1 on 09.03.2015.
- */
 
 // читает и хранит свечи поступающие из источников исторических данных, и сообщает наболюдателям о наличии обновлений
 // TODO должен работать в своей нити
@@ -19,15 +12,6 @@ public class HistoryStorage {
     public static final BigDecimal PERCENT_TO_MINIMUM_GOAL_OF_DEAL = new BigDecimal(0.5f);
     // минимальная цель для совершения сделки, вычисляется лениво
     private BigDecimal minimumGoalOfDeal;
-
-    synchronized public BigDecimal getMinimumGoalOfDeal() {
-        if (minimumGoalOfDeal==null) setMinimumGoalOfDeal();
-        return minimumGoalOfDeal;
-    }
-    private void setMinimumGoalOfDeal() {
-        BigDecimal ONEHUNDERT = new BigDecimal(100);
-        minimumGoalOfDeal =bars.get(bars.size()-1).CLOSE.multiply(PERCENT_TO_MINIMUM_GOAL_OF_DEAL).divide(ONEHUNDERT);
-    }
 
     // минимальный шаг цены, вычисляется автоматически лениво
     private BigDecimal minimumStepCost;
@@ -82,38 +66,6 @@ public class HistoryStorage {
 
     // в отдельной нити проверяем обновления файла истории
 
-    public void startAutoRefreshHistory() {
-        Thread thread = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                // берем таймфрейм истории минус 5 секунд
-                int startPause = 1;
-//                int startPause = getTimeFrameSeconds()-5;
-//                ConsoleHelper.getInstance().writeMessage("HistoryStorage: время ожидания после первого обновения "+startPause+"с");
-
-
-                int timePause = 1;
-                while (true){
-                    try {
-                        // до первого обновления пауза будет 1с, затем она станет равной таймфрейму минус 5с
-                        TimeUnit.SECONDS.sleep(timePause);
-                        timePause = 1;
-                    } catch (InterruptedException e) {
-                        ConsoleHelper.getInstance().writeMessage("HistoryStorage: ошибка при ожидании");
-                    }
-                    if (tryRefreshData()) {
-//                        ConsoleHelper.getInstance().writeMessage("HistoryStorage: есть обновление");
-
-                        // делаем паузу между обновлениями равной таймфрейму минус 5с
-                        timePause = startPause;
-                        Advisor.getInstance().runAdvice();
-                    }
-                }
-            }
-        });
-        thread.setDaemon(true);
-        thread.start();
-    }
 
     public boolean tryRefreshData() {
 
@@ -147,7 +99,7 @@ public class HistoryStorage {
     }
 
     public String lastBarsToString(Integer nBars) {
-        String result = new String();
+        String result = "";
         for (int i = nBars; i > 0; i--) {
             result+=bars.get(bars.size()-1-i).toString()+"\n";
         }
@@ -187,9 +139,7 @@ public class HistoryStorage {
             BigDecimal prev = new BigDecimal(0); // чемуто долджно быть равно предыдущее значение
 
             // здесь можно и сокращенным итератором, но поначалу хотелось брать по два значения сразу
-            Iterator<BigDecimal> bigDecimalIterator = bigDecimals.iterator();
-            while (bigDecimalIterator.hasNext()) {
-                BigDecimal temp = bigDecimalIterator.next();
+            for (BigDecimal temp : bigDecimals) {
                 BigDecimal tempMinimum = temp.subtract(prev);
 
                 // если существует положительная разница между временным минимумом и тем который уже был ранее известен
@@ -230,15 +180,6 @@ public class HistoryStorage {
         return dir;
     }
 
-    public List<ExampleOfBarChart> getLastExamples() {
-        List<ExampleOfBarChart> result = new ArrayList<>();
-        for (int length = 1; length <= ApplicationExecutor.storagePattern.getMaxLenght(); length++) {
-
-            // создаем и добавляем в результат пример, начиная с адреса размерИстории-length и длинной length
-            result.add(new ExampleOfBarChart(this,HistoryStorage.getInstance().bars.size()-length-1,length));
-        }
-        return result;
-    }
 
 
 }
