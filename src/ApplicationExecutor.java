@@ -14,7 +14,8 @@ public class ApplicationExecutor {
         Thread mainWindow = new Thread(() -> {
             ConsoleHelper.getInstance().setTitle("Candle pattern miner");
             ConsoleHelper.getInstance().setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-            ConsoleHelper.getInstance().setSize(900, 900);
+            ConsoleHelper.getInstance().setSize(600, 200);
+            ConsoleHelper.getInstance().setExtendedState(JFrame.MAXIMIZED_BOTH);
             ConsoleHelper.getInstance().setVisible(true);
         });
         mainWindow.start();
