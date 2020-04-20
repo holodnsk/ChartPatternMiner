@@ -15,6 +15,7 @@ public class ApplicationExecutor {
         }).start();
 
         // TODO исправить костыль ожидания загрузки главного окна
+        // TODO исправить костыль ожидания загрузки главного окна
         while(ConsoleHelper.getInstance()==null){
             Thread.sleep(100);
         }
